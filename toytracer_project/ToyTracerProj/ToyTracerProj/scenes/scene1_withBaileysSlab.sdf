@@ -1,0 +1,96 @@
+# scene1.sdf, last modified 10/04/05
+#
+# This is a scene description for a simple scene
+# consisting of a single reflective sphere, two
+# diffuse blocks, and a single point light source.
+# Point light sources are defined as point objects
+# with non-zero emission.
+
+# Set the viewing parameters.
+
+eye     (5.0,-2.0, 2.8)
+lookat  (0.0, 1.1, 0.25)
+up      (0.0, 0.0, 1.0)
+vpdist  2.75
+x_win   ( -1.25, 1.25 )
+y_win   ( -1, 1 )
+
+# Set the image resolution.
+
+x_res 1000
+y_res 800
+
+# Set constants that will apply to all objects, until reset.
+
+ambient [0.2, 0.2, 0.2]
+shader basic_shader
+envmap basic_envmap [0.15, 0.25, 0.35]
+
+# Establish the rasterizer that will make the image by tracing primary rays.
+
+rasterizer basic_rasterizer
+
+# Define the single aggregate object and its child objects.
+
+specular     [1, 1, 1]
+reflectivity [0, 0, 0]
+translucency [0, 0, 0]
+ref_index    1
+Phong_exp    0
+
+begin List
+
+    emission     [1, 1, 1]
+    point        (-3.0, -4.0, 12.0)
+
+    emission     [0, 0, 0]
+    diffuse      [0.54, 0.53, 0.87]
+	translucency [0, 0, 0]
+    block        (-1, 1.2, -1) (1, 2, 2)
+
+    diffuse      [0.84, 0.87, 0.63]
+	translucency [0, 0, 0]
+    block        (-4, -6, -2) (4, 6, -1)
+    
+    diffuse      [0.96, 0.65, 0.58]
+    specular     [1.00, 0.85, 0.75]
+    reflectivity [0.40, 0.40, 0.40]
+	translucency [0, 0, 0]
+    Phong_exp    15
+    sphere       (0, 0, 0) 1
+	
+	#diffuse      [0.0, 0.0, 0.0]
+	#translucency [0.8, 0.8, 0.8]
+	#reflectivity [0, 0, 0]
+	#ref_index    1.49
+    #block        (2.0, -1.5, 0.6) (2.2, -0.8, 1.1)
+
+	#diffuse      [0.96, 0.1, 0.1]
+    #specular     [1.00, 0.85, 0.75]
+	#reflectivity [0, 0, 0]
+    #Phong_exp    15
+	#translucency [0.8, 0.8, 0.8]
+	#ref_index    1.33
+    #sphere       (2.0, 1, 1.2) 0.3
+	
+	diffuse      [0.90, 0.90, 0.90]
+    specular     [0.10, 0.15, 0.15]
+    reflectivity [0.1, 0.1, 0.1]
+    translucency [0.90, 0.90, 0.90]
+    Phong_exp    3
+    ref_index    2.75
+#    ref_index    0.75040735
+    block        (3.5, -1.4, 1.7) (3.65, -0.7, 2.4)
+	
+	diffuse      [0.99,0.84,0]
+    specular     [1.00, 0.85, 0.75]
+	reflectivity [0, 0, 0]
+    Phong_exp    15
+	translucency [0, 0, 0]
+	ref_index    1.0
+    sphere       (-6.0, 2.0, 0.5) 0.3
+
+end
+
+
+
