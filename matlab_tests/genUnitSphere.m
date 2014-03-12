@@ -10,7 +10,7 @@ P = (
 %}
 clear all;
 numGridVals = 30;
-numIterations = 50;
+numIterations = 10;
 
 interval = 2/numGridVals;
 intervalValues = -1:interval:1;
@@ -34,11 +34,12 @@ for iteration = 1:numIterations
     randomIntervalValues = rand(1,numValues).*interval;
 
     %do uniform distribution
-    %Xvals = gridXvals + rand(numValues,numValues).*interval;
-    %Yvals = gridYvals + rand(numValues,numValues).*interval;
+    Xvals = gridXvals + rand(numValues,numValues).*interval;
+    Yvals = gridYvals + rand(numValues,numValues).*interval;
 
-    Xvals = gridXvals + (randn(numValues,numValues).*standardDev + mean).*interval;
-    Yvals = gridYvals + (randn(numValues,numValues).*standardDev + mean).*interval;
+    %do normal distribution
+    %Xvals = gridXvals + (randn(numValues,numValues).*standardDev + mean).*interval;
+    %Yvals = gridYvals + (randn(numValues,numValues).*standardDev + mean).*interval;
 
     %only put it in the center
     %Xvals = gridXvals + 0.5.*interval;
