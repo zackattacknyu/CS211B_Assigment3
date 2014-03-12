@@ -72,8 +72,8 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	//get the attentuation
 	//	A = 1/(a + b*r + c*r^2)
 	double attenuation_a = 0.0;
-	double attenuation_b = 0.23;
-	double attenuation_c = 0.18;
+	double attenuation_b = 0.0;
+	double attenuation_c = 0.02;
 	double attenuation;
 	double lightDistance;
 	Vec3 lightVector;
