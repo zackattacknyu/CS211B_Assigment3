@@ -8,29 +8,51 @@ P = (
     )
 
 %}
+clear all;
+numGridVals = 30;
+numIterations = 50;
 
-%computes the interval values, method 1
-%interval = pi/30;
-%angleValues = 0:interval:2*pi;
-%angleValuesHalf = 0:interval:pi/2;
+interval = 2/numGridVals;
+intervalValues = -1:interval:1;
 
+sizeIntVals = size(intervalValues);
+numValues = sizeIntVals(2);
 
-numValues = 50;
+%{
+The random number generator generates from a normal distribution
+   where the standard deviation is standardDev and the mean is mean. 
+This way the numbers tend toward the center of the box
+%}
+standardDev = 1/8;
+mean = 1/2;
 
-%computes random theta and phi values, method 2
-angleValues = rand(1,numValues)*(2*pi);
-angleValuesHalf = rand(1,numValues)*(pi/2);
+%makes the meshgrid
+[gridXvals, gridYvals] = meshgrid(intervalValues,intervalValues);
 
-%makes the meshgrid for method 1 and 2
-%[Phi, Theta] = meshgrid(angleValuesHalf,angleValues);
+for iteration = 1:numIterations
+    
+    randomIntervalValues = rand(1,numValues).*interval;
 
-%makes random phi,theta pair, method 3
-Phi = rand(1,numValues*numValues)*(2*pi);
-Theta = rand(1,numValues*numValues)*(2*pi);
+    %do uniform distribution
+    %Xvals = gridXvals + rand(numValues,numValues).*interval;
+    %Yvals = gridYvals + rand(numValues,numValues).*interval;
 
-%computes the sphere
-pointsX = sin(Phi).*cos(Theta);
-pointsY = sin(Phi).*sin(Theta);
-pointsZ = cos(Phi);
+    Xvals = gridXvals + (randn(numValues,numValues).*standardDev + mean).*interval;
+    Yvals = gridYvals + (randn(numValues,numValues).*standardDev + mean).*interval;
 
-plot3(pointsX,pointsY,pointsZ,'r.');
+    %only put it in the center
+    %Xvals = gridXvals + 0.5.*interval;
+    %Yvals = gridYvals + 0.5.*interval;
+
+    radius = 1;
+    squaredDist = Xvals.^2 + Yvals.^2;
+    XvalsPlot = Xvals(squaredDist <= radius^2);
+    YvalsPlot = Yvals(squaredDist <= radius^2);
+    ZvalsPlot = sqrt(1 - XvalsPlot.^2 - YvalsPlot.^2);
+
+    hold on
+    plot3(XvalsPlot,YvalsPlot,ZvalsPlot,'r.');
+    hold off
+    
+end
+
