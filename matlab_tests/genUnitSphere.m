@@ -9,17 +9,24 @@ P = (
 
 %}
 
-%computes the interval values
+%computes the interval values, method 1
 %interval = pi/30;
 %angleValues = 0:interval:2*pi;
 %angleValuesHalf = 0:interval:pi/2;
 
-numValues = 30;
-angleValues = rand(1,30)*(2*pi);
-angleValuesHalf = rand(1,30)*(pi/2);
 
-%makes the meshgrid
-[Phi, Theta] = meshgrid(angleValuesHalf,angleValues);
+numValues = 50;
+
+%computes random theta and phi values, method 2
+angleValues = rand(1,numValues)*(2*pi);
+angleValuesHalf = rand(1,numValues)*(pi/2);
+
+%makes the meshgrid for method 1 and 2
+%[Phi, Theta] = meshgrid(angleValuesHalf,angleValues);
+
+%makes random phi,theta pair, method 3
+Phi = rand(1,numValues*numValues)*(2*pi);
+Theta = rand(1,numValues*numValues)*(2*pi);
 
 %computes the sphere
 pointsX = sin(Phi).*cos(Theta);
