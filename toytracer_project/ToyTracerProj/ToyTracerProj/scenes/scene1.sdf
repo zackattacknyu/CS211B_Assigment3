@@ -55,7 +55,7 @@ begin List
     emission     [0, 0, 0]
     diffuse      [0.54, 0.53, 0.87]
 	translucency [0, 0, 0]
-    block        (-1, 1.2, -1) (1, 2, 2)
+    block        (-1, 2.0, -1) (1, 2.8, 2)
 
     diffuse      [0.84, 0.87, 0.63]
 	translucency [0, 0, 0]
