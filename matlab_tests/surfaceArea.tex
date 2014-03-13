@@ -45,9 +45,45 @@ We want to find the surface area of a patch $[\phi_1,\phi_2] \times [\theta_1,\t
 \[
 \Omega = (\theta_1 - \theta_2)(cos\phi_2 - cos\phi_1)
 \]
-Our current patches are in the form $[x_1,y_1] \times [x_2,y_2]$ which are squares in the unit disk. This page lists more information:
+This page lists more information:
 http://luki.webzdarma.cz/eng\_12\_en.htm
-
+\newpage
+Our current patches are in the form $[x_1,y_1] \times [x_2,y_2]$ which are squares in the unit disk. 
+\\
+In order to accomplish what we want, we will use the following unit hemisphere parameterization:
+\[
+r(x,y) = (x, y, \sqrt{1-x^2-y^2})
+\]
+The partials are as follows
+\[
+r_x = (1,0,\frac{-x}{\sqrt{1-x^2-y^2}})
+\]
+\[
+r_y = (0,1,\frac{-y}{\sqrt{1-x^2-y^2}})
+\]
+The cross product ends up being
+\[
+r_x \times r_y = \frac{x}{z}i + \frac{y}{z}j + k
+\]
+The magnitude ends up being
+\[
+|r_x \times r_y| = \sqrt{ (\frac{x}{z})^2 + (\frac{y}{z})^2 + 1 }
+\]
+\[
+|r_x \times r_y| = \sqrt{ \frac{x^2+y^2+z^2}{z^2} }
+\]
+Now we know that $x^2 + y^2 + z^2 = 1$ and that $z \geq 0$ since this is the unit hemisphere, thus
+\[
+|r_x \times r_y| = \frac{1}{z}
+\]
+We know need to find
+\[
+\Omega = \int_{y_1}^{y_2}{ \int_{x_1}^{x_2}{\frac{1}{z} \,dx \,dy} }
+\]
+The exact expression is quite large and cumbersome to compute, so we will approximate it. Let $z'$ be the average of the z values in the 4 corners of the patch.We will thus have
+\[
+\Omega \approx (x_2-x_1)(y_2-y_1)\frac{1}{z'}
+\]
 \end{document}
 
 
