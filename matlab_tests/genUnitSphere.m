@@ -9,22 +9,14 @@ P = (
 
 %}
 clear all;
-numGridVals = 30;
-numIterations = 5;
+numGridVals = 50;
+numIterations = 10;
 
 interval = 2/numGridVals;
 intervalValues = -1:interval:1;
 
 sizeIntVals = size(intervalValues);
 numValues = sizeIntVals(2);
-
-%{
-The random number generator generates from a normal distribution
-   where the standard deviation is standardDev and the mean is mean. 
-This way the numbers tend toward the center of the box
-%}
-standardDev = 1/8;
-mean = 1/2;
 
 %makes the meshgrid
 [gridXvals, gridYvals] = meshgrid(intervalValues,intervalValues);
@@ -44,14 +36,6 @@ for iteration = 1:numIterations
     %do uniform distribution
     Xvals = gridXvals + rand(numValues,numValues).*interval;
     Yvals = gridYvals + rand(numValues,numValues).*interval;
-
-    %do normal distribution
-    %Xvals = gridXvals + (randn(numValues,numValues).*standardDev + mean).*interval;
-    %Yvals = gridYvals + (randn(numValues,numValues).*standardDev + mean).*interval;
-
-    %only put it in the center
-    %Xvals = gridXvals + 0.5.*interval;
-    %Yvals = gridYvals + 0.5.*interval;
 
     radius = 1;
     squaredDist = Xvals.^2 + Yvals.^2;
