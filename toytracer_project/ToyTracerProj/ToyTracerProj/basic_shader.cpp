@@ -101,10 +101,12 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	float currentYvalue;
 	float interval = 2.0f/totalGridVals;
 	float currentDist;
-	bool inUnitSphere = false;
+	bool posZinHemisphere,negZinHemisphere;
 	int currentInd1,currentInd2;
 	float randomX,randomY;
 	float currentPosZvalue,currentNegZvalue;
+	Vec3 currentNormal = Vec3(0.0f,0.0f,1.0f);
+	float dotProdPosZ,dotProdNegZ,dotProdXYpart;
 
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
@@ -118,25 +120,36 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 				
 				currentDist = currentXvalue*currentXvalue + currentYvalue*currentYvalue;
 
-				currentPosZvalue = sqrt(1-currentDist);
-				currentNegZvalue = -currentPosZvalue;
+				posZinHemisphere = false;
+				negZinHemisphere = false;
 
 				currentInd1 = (xInd*numGridVals + yInd)*numSamples + sampleInd;
 				currentInd2 = currentInd1 + totalNumGridVals;
 
 				//makes sure it is inside the unit disk
 				if(currentDist <= 1){
-					gridXvalues[currentInd1] = currentXvalue;
-					gridYvalues[currentInd1] = currentYvalue;
 
-					gridZvalues[currentInd1] = currentPosZvalue;
+					currentPosZvalue = sqrt(1-currentDist);
+					currentNegZvalue = -currentPosZvalue;
 
-					gridXvalues[currentInd2] = currentXvalue;
-					gridYvalues[currentInd2] = currentYvalue;
+					dotProdXYpart = currentNormal.x*currentXvalue + currentNormal.y*currentYvalue;
+					dotProdPosZ = currentNormal.z*currentPosZvalue + dotProdXYpart;
+					dotProdNegZ = currentNormal.z*currentNegZvalue + dotProdXYpart;
 
-					gridZvalues[currentInd2] = currentNegZvalue;
+					posZinHemisphere = (dotProdPosZ >=0);
+					negZinHemisphere = (dotProdNegZ >=0);
 
-					inUnitSphere = true;
+					if(posZinHemisphere){
+						gridXvalues[currentInd1] = currentXvalue;
+						gridYvalues[currentInd1] = currentYvalue;
+						gridZvalues[currentInd1] = currentPosZvalue;
+					}
+
+					if(negZinHemisphere){
+						gridXvalues[currentInd2] = currentXvalue;
+						gridYvalues[currentInd2] = currentYvalue;
+						gridZvalues[currentInd2] = currentNegZvalue;
+					}
 
 				}else{
 					gridXvalues[currentInd1] = 0;
@@ -145,12 +158,13 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 					gridXvalues[currentInd2] = 0;
 					gridYvalues[currentInd2] = 0;
 					gridZvalues[currentInd2] = 0;
-
-					inUnitSphere = false;
 				}
 
-				if(inUnitSphere){
+				if(posZinHemisphere){
 					printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd1],gridYvalues[currentInd1],gridZvalues[currentInd1]);
+				}
+
+				if(negZinHemisphere){
 					printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd2],gridYvalues[currentInd2],gridZvalues[currentInd2]);
 				}
 			}
