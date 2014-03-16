@@ -104,6 +104,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	bool inUnitSphere = false;
 	int currentInd1,currentInd2;
 	float randomX,randomY;
+	float currentPosZvalue,currentNegZvalue;
 
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
@@ -114,8 +115,11 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 				currentXvalue = -1+interval*xInd + interval*randomX;
 				currentYvalue = -1+interval*yInd + interval*randomY;
-
+				
 				currentDist = currentXvalue*currentXvalue + currentYvalue*currentYvalue;
+
+				currentPosZvalue = sqrt(1-currentDist);
+				currentNegZvalue = -currentPosZvalue;
 
 				currentInd1 = (xInd*numGridVals + yInd)*numSamples + sampleInd;
 				currentInd2 = currentInd1 + totalNumGridVals;
@@ -125,12 +129,12 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 					gridXvalues[currentInd1] = currentXvalue;
 					gridYvalues[currentInd1] = currentYvalue;
 
-					gridZvalues[currentInd1] = sqrt(1-currentDist);
+					gridZvalues[currentInd1] = currentPosZvalue;
 
 					gridXvalues[currentInd2] = currentXvalue;
 					gridYvalues[currentInd2] = currentYvalue;
 
-					gridZvalues[currentInd2] = -gridZvalues[currentInd1];
+					gridZvalues[currentInd2] = currentNegZvalue;
 
 					inUnitSphere = true;
 
