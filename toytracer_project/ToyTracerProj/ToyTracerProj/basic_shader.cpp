@@ -90,20 +90,54 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 	int numGridVals = 10;
 	int totalNumGridVals = numGridVals*numGridVals;
-	float* gridXvalues = new float[totalNumGridVals];
-	float* gridYvalues = new float[totalNumGridVals];
+	int totalArrayValues = totalNumGridVals*2;
+	float* gridXvalues = new float[totalArrayValues];
+	float* gridYvalues = new float[totalArrayValues];
+	float* gridZvalues = new float[totalArrayValues];
 	float totalGridVals = numGridVals;
 	float currentXvalue;
 	float currentYvalue;
 	float interval = 2.0f/totalGridVals;
+	float currentDist;
+	bool inUnitSphere = false;
 
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
 			currentXvalue = -1+interval*xInd;
 			currentYvalue = -1+interval*yInd;
-			gridXvalues[xInd*numGridVals + yInd] = currentXvalue;
-			gridYvalues[xInd*numGridVals + yInd] = currentYvalue;
-			printf("(x,y)=(%f,%f)\n",gridXvalues[xInd*numGridVals + yInd],gridYvalues[xInd*numGridVals + yInd]);
+
+			currentDist = currentXvalue*currentXvalue + currentYvalue*currentYvalue;
+
+			//makes sure it is inside the unit disk
+			if(currentDist <= 1){
+				gridXvalues[xInd*numGridVals + yInd] = currentXvalue;
+				gridYvalues[xInd*numGridVals + yInd] = currentYvalue;
+
+				gridZvalues[xInd*numGridVals + yInd] = sqrt(1-currentDist);
+
+				gridXvalues[xInd*numGridVals + yInd + totalNumGridVals] = currentXvalue;
+				gridYvalues[xInd*numGridVals + yInd + totalNumGridVals] = currentYvalue;
+
+				gridZvalues[xInd*numGridVals + yInd + totalNumGridVals] = -gridZvalues[xInd*numGridVals + yInd];
+
+				inUnitSphere = true;
+
+			}else{
+				gridXvalues[xInd*numGridVals + yInd] = 0;
+				gridYvalues[xInd*numGridVals + yInd] = 0;
+				gridZvalues[xInd*numGridVals + yInd] = 0;
+				gridXvalues[xInd*numGridVals + yInd + totalNumGridVals] = 0;
+				gridYvalues[xInd*numGridVals + yInd + totalNumGridVals] = 0;
+				gridZvalues[xInd*numGridVals + yInd + totalNumGridVals] = 0;
+
+				inUnitSphere = false;
+			}
+
+			if(inUnitSphere){
+				printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[xInd*numGridVals + yInd],gridYvalues[xInd*numGridVals + yInd],gridZvalues[xInd*numGridVals + yInd]);
+				printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[xInd*numGridVals + yInd + totalNumGridVals],gridYvalues[xInd*numGridVals + yInd + + totalNumGridVals],gridZvalues[xInd*numGridVals + yInd + + totalNumGridVals]);
+			}
+			
 		}
 	}
 	
