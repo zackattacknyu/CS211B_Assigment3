@@ -88,6 +88,21 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	Vec3 currentR;
 	bool objectWasHit = false;
 
+	int numGridVals = 10;
+	float* gridXvalues = new float[numGridVals*numGridVals];
+	float* gridYvalues = new float[numGridVals*numGridVals];
+
+	for(int xInd = 0; xInd < numGridVals; xInd++){
+		for(int yInd = 0; yInd < numGridVals; yInd++){
+			gridXvalues[xInd*numGridVals + yInd] = xInd;
+			gridYvalues[xInd*numGridVals + yInd] = yInd;
+			//printf("(x,y)=(%f,%f)\n",gridXvalues[xInd*numGridVals + yInd],gridYvalues[xInd*numGridVals + yInd]);
+		}
+	}
+	
+	delete [] gridXvalues;
+	delete [] gridYvalues;
+
     for( unsigned i = 0; i < scene.NumLights(); i++ )
         {
         const Object *light = scene.GetLight(i);
@@ -161,7 +176,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 		//calculate the new color
 		specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
 		diffuseColor = diffuseColor + shadowFactor*(attenuation*diffuseFactor)*emission;
-        }
+    }
 
 	colorWithLighting = color + diffuseColor*diffuse + specularColor*specular;
 
