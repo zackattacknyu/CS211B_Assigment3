@@ -89,60 +89,70 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	bool objectWasHit = false;
 
 	int numGridVals = 10;
-	int totalNumGridVals = numGridVals*numGridVals;
+	int numSamples = 5;
+	int totalNumGridVals = numGridVals*numGridVals*numSamples;
 	int totalArrayValues = totalNumGridVals*2;
 	float* gridXvalues = new float[totalArrayValues];
 	float* gridYvalues = new float[totalArrayValues];
 	float* gridZvalues = new float[totalArrayValues];
+	bool* inSphere = new bool[totalArrayValues];
 	float totalGridVals = numGridVals;
 	float currentXvalue;
 	float currentYvalue;
 	float interval = 2.0f/totalGridVals;
 	float currentDist;
 	bool inUnitSphere = false;
+	int currentInd1,currentInd2;
 
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
-			currentXvalue = -1+interval*xInd;
-			currentYvalue = -1+interval*yInd;
+			for(int sampleInd = 0; sampleInd < numSamples; sampleInd++){
+				currentXvalue = -1+interval*xInd;
+				currentYvalue = -1+interval*yInd;
 
-			currentDist = currentXvalue*currentXvalue + currentYvalue*currentYvalue;
+				currentDist = currentXvalue*currentXvalue + currentYvalue*currentYvalue;
 
-			//makes sure it is inside the unit disk
-			if(currentDist <= 1){
-				gridXvalues[xInd*numGridVals + yInd] = currentXvalue;
-				gridYvalues[xInd*numGridVals + yInd] = currentYvalue;
+				currentInd1 = (xInd*numGridVals + yInd)*numSamples + sampleInd;
+				currentInd2 = currentInd1 + totalNumGridVals;
 
-				gridZvalues[xInd*numGridVals + yInd] = sqrt(1-currentDist);
+				//makes sure it is inside the unit disk
+				if(currentDist <= 1){
+					gridXvalues[currentInd1] = currentXvalue;
+					gridYvalues[currentInd1] = currentYvalue;
 
-				gridXvalues[xInd*numGridVals + yInd + totalNumGridVals] = currentXvalue;
-				gridYvalues[xInd*numGridVals + yInd + totalNumGridVals] = currentYvalue;
+					gridZvalues[currentInd1] = sqrt(1-currentDist);
 
-				gridZvalues[xInd*numGridVals + yInd + totalNumGridVals] = -gridZvalues[xInd*numGridVals + yInd];
+					gridXvalues[currentInd2] = currentXvalue;
+					gridYvalues[currentInd2] = currentYvalue;
 
-				inUnitSphere = true;
+					gridZvalues[currentInd2] = -gridZvalues[currentInd1];
 
-			}else{
-				gridXvalues[xInd*numGridVals + yInd] = 0;
-				gridYvalues[xInd*numGridVals + yInd] = 0;
-				gridZvalues[xInd*numGridVals + yInd] = 0;
-				gridXvalues[xInd*numGridVals + yInd + totalNumGridVals] = 0;
-				gridYvalues[xInd*numGridVals + yInd + totalNumGridVals] = 0;
-				gridZvalues[xInd*numGridVals + yInd + totalNumGridVals] = 0;
+					inUnitSphere = true;
 
-				inUnitSphere = false;
+				}else{
+					gridXvalues[currentInd1] = 0;
+					gridYvalues[currentInd1] = 0;
+					gridZvalues[currentInd1] = 0;
+					gridXvalues[currentInd2] = 0;
+					gridYvalues[currentInd2] = 0;
+					gridZvalues[currentInd2] = 0;
+
+					inUnitSphere = false;
+				}
+
+				if(inUnitSphere){
+					printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd1],gridYvalues[currentInd1],gridZvalues[currentInd1]);
+					printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd2],gridYvalues[currentInd2],gridZvalues[currentInd2]);
+				}
 			}
-
-			if(inUnitSphere){
-				printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[xInd*numGridVals + yInd],gridYvalues[xInd*numGridVals + yInd],gridZvalues[xInd*numGridVals + yInd]);
-				printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[xInd*numGridVals + yInd + totalNumGridVals],gridYvalues[xInd*numGridVals + yInd + + totalNumGridVals],gridZvalues[xInd*numGridVals + yInd + + totalNumGridVals]);
-			}
+			
 			
 		}
 	}
 	
 	delete [] gridXvalues;
 	delete [] gridYvalues;
+	delete [] inSphere;
 
     for( unsigned i = 0; i < scene.NumLights(); i++ )
         {
