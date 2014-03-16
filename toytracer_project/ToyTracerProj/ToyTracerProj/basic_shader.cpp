@@ -89,14 +89,21 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	bool objectWasHit = false;
 
 	int numGridVals = 10;
-	float* gridXvalues = new float[numGridVals*numGridVals];
-	float* gridYvalues = new float[numGridVals*numGridVals];
+	int totalNumGridVals = numGridVals*numGridVals;
+	float* gridXvalues = new float[totalNumGridVals];
+	float* gridYvalues = new float[totalNumGridVals];
+	float totalGridVals = numGridVals;
+	float currentXvalue;
+	float currentYvalue;
+	float interval = 2.0f/totalGridVals;
 
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
-			gridXvalues[xInd*numGridVals + yInd] = xInd;
-			gridYvalues[xInd*numGridVals + yInd] = yInd;
-			//printf("(x,y)=(%f,%f)\n",gridXvalues[xInd*numGridVals + yInd],gridYvalues[xInd*numGridVals + yInd]);
+			currentXvalue = -1+interval*xInd;
+			currentYvalue = -1+interval*yInd;
+			gridXvalues[xInd*numGridVals + yInd] = currentXvalue;
+			gridYvalues[xInd*numGridVals + yInd] = currentYvalue;
+			printf("(x,y)=(%f,%f)\n",gridXvalues[xInd*numGridVals + yInd],gridYvalues[xInd*numGridVals + yInd]);
 		}
 	}
 	
