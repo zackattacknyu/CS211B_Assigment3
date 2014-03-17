@@ -86,16 +86,17 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	Color reflectedColor;
 	Color refractedColor;
 	Vec3 currentR;
+	double shadowFactor = 0;
 	bool objectWasHit = false;
 
 	int numGridVals = 10;
 	int numSamples = 5;
 	int totalNumGridVals = numGridVals*numGridVals*numSamples;
 	int totalArrayValues = totalNumGridVals*2;
-	float* gridXvalues = new float[totalArrayValues];
-	float* gridYvalues = new float[totalArrayValues];
-	float* gridZvalues = new float[totalArrayValues];
-	bool* inSphere = new bool[totalArrayValues];
+	//float* gridXvalues = new float[totalArrayValues];
+	//float* gridYvalues = new float[totalArrayValues];
+	//float* gridZvalues = new float[totalArrayValues];
+	//bool* inSphere = new bool[totalArrayValues];
 	float totalGridVals = numGridVals;
 	float currentXvalue;
 	float currentYvalue;
@@ -107,6 +108,8 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	float currentPosZvalue,currentNegZvalue;
 	Vec3 currentNormal = Vec3(0.0f,0.0f,1.0f);
 	float dotProdPosZ,dotProdNegZ,dotProdXYpart;
+	Vec3 positiveZvector;
+	Vec3 negativeZvector;
 
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
@@ -139,7 +142,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 					posZinHemisphere = (dotProdPosZ >=0);
 					negZinHemisphere = (dotProdNegZ >=0);
 
-					if(posZinHemisphere){
+					/*if(posZinHemisphere){
 						gridXvalues[currentInd1] = currentXvalue;
 						gridYvalues[currentInd1] = currentYvalue;
 						gridZvalues[currentInd1] = currentPosZvalue;
@@ -149,23 +152,83 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 						gridXvalues[currentInd2] = currentXvalue;
 						gridYvalues[currentInd2] = currentYvalue;
 						gridZvalues[currentInd2] = currentNegZvalue;
-					}
+					}*/
 
 				}else{
-					gridXvalues[currentInd1] = 0;
+					/*gridXvalues[currentInd1] = 0;
 					gridYvalues[currentInd1] = 0;
 					gridZvalues[currentInd1] = 0;
 					gridXvalues[currentInd2] = 0;
 					gridYvalues[currentInd2] = 0;
-					gridZvalues[currentInd2] = 0;
+					gridZvalues[currentInd2] = 0;*/
 				}
 
+
 				if(posZinHemisphere){
-					printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd1],gridYvalues[currentInd1],gridZvalues[currentInd1]);
+
+					positiveZvector = Vec3(currentXvalue,currentYvalue,currentPosZvalue);
+
+					/*for( unsigned i = 0; i < scene.NumLights(); i++ )
+					{
+						const Object *light = scene.GetLight(i);
+						Color emission = light->material->emission;
+						AABB box = GetBox( *light );
+						Vec3 LightPos( Center( box ) ); 
+
+						//gets the light Vector
+						lightVector = LightPos - P;
+						lightDistance = Length(lightVector);
+						lightVector = Unit(lightVector);
+
+						printf("Light %d has vector:(%f,%f,%f)\n",i,lightVector.x,lightVector.y,lightVector.z);
+
+						//sees if current direction moves toward light vector
+						if(Length(lightVector-positiveZvector) < 0.05){
+							//gets the attenuation factor
+							attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
+
+							//light ray to case to determine occulsion
+							ray.origin = P;
+							ray.direction = lightVector;
+							HitInfo objectHit;
+							objectHit.distance = Infinity;
+							Vec3 deltaVector;
+							Vec3 currentLightVector;
+							currentLightVector = lightVector + deltaVector;
+
+							shadowFactor = 1;
+							if(scene.Cast(ray,objectHit) ){
+								if(objectHit.object != NULL){
+									shadowFactor = 0;
+								}
+							}
+
+							//gets the diffuse component
+							diffuseFactor = max(0,lightVector*N);
+		
+							//gets the specular component
+							currentR = Unit(2.0*(N*lightVector)*N - lightVector);
+							specularFactor = max(0, pow(currentR*E,e) );
+
+							if(diffuseFactor == 0){
+								specularFactor = 0;
+							}
+
+							//calculate the new color
+							//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
+							diffuseColor = diffuseColor + shadowFactor*(attenuation*diffuseFactor)*emission;
+						}
+		
+						
+		
+						
+					}*/
+					//printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd1],gridYvalues[currentInd1],gridZvalues[currentInd1]);
 				}
 
 				if(negZinHemisphere){
-					printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd2],gridYvalues[currentInd2],gridZvalues[currentInd2]);
+					negativeZvector = Vec3(currentXvalue,currentYvalue,currentNegZvalue);
+					//printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd2],gridYvalues[currentInd2],gridZvalues[currentInd2]);
 				}
 			}
 			
@@ -173,9 +236,9 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 		}
 	}
 	
-	delete [] gridXvalues;
-	delete [] gridYvalues;
-	delete [] inSphere;
+	//delete [] gridXvalues;
+	//delete [] gridYvalues;
+	//delete [] inSphere;
 
     for( unsigned i = 0; i < scene.NumLights(); i++ )
         {
@@ -200,7 +263,6 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 		objectHit.distance = Infinity;
 
 		const int numRaysSoftShadows = 1;
-		double shadowFactor = 0;
 		double randomLightDeltaY;
 		double randomLightDeltaZ;
 		Vec3 deltaVector;
@@ -227,7 +289,11 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 			if(scene.Cast(ray,objectHit) ){
 				if(objectHit.object != NULL){
-					shadowFactor = shadowFactor + 1;
+					//12 and above are where the dummy blocks are
+					if(objectHit.point.z < 12.0){
+						shadowFactor = shadowFactor + 1;
+					}
+					
 				}
 			}
 		}
