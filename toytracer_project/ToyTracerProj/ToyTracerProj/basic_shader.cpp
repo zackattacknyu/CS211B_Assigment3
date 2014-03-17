@@ -89,8 +89,8 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	double shadowFactor = 0;
 	bool objectWasHit = false;
 
-	int numGridVals = 10;
-	int numSamples = 5;
+	int numGridVals = 30;
+	int numSamples = 10;
 	int totalNumGridVals = numGridVals*numGridVals*numSamples;
 	int totalArrayValues = totalNumGridVals*2;
 	//float* gridXvalues = new float[totalArrayValues];
@@ -111,6 +111,9 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	Vec3 positiveZvector;
 	Vec3 negativeZvector;
 	int numLightsHit = 0;
+
+	//temp variable. default emission of the light blocks
+	Color defaultEmission = Color(0.5,0.5,0.5);
 
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
@@ -176,14 +179,14 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 					objectHit.distance = Infinity;
 
 					shadowFactor = 1;
-					numLightsHit = 0;
 					if(scene.Cast(ray,objectHit) ){
 						if(objectHit.object != NULL){
 							Vec3 LightPos = objectHit.point;
+							
 							if(LightPos.z > 12.0){
+								//printf("Hit Point: (%f,%f,%f)\n",LightPos.x,LightPos.y,LightPos.z);
+
 								numLightsHit = numLightsHit + 1;
-								//the object hit is one of the lights
-								Color emission = objectHit.object->material->emission;
 
 								//gets the light Vector
 								lightVector = LightPos - P;
@@ -204,14 +207,12 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 								//calculate the new color
 								//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
-								//diffuseColor = diffuseColor + (attenuation*diffuseFactor)*emission;
+								diffuseColor = diffuseColor + (attenuation*diffuseFactor)*defaultEmission;
 							}
 						}
 					}
 
-					if(numLightsHit > 0){
-						//printf("Number of Lights Hit:%d\n",numLightsHit);		
-					}
+					
 					
 		
 					//printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd1],gridYvalues[currentInd1],gridZvalues[currentInd1]);
@@ -227,6 +228,15 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 		}
 	}
 	
+	float numLights = numLightsHit;
+	diffuseColor = diffuseColor/numLights;
+	if(numLightsHit > 1){
+		//printf("Number of Lights Hit:%d\n",numLightsHit);
+		//printf("Original Color: (%f,%f,%f)\n",diffuse.blue,diffuse.green,diffuse.red);
+		//printf("Diffuse Color: (%f,%f,%f)\n\n",diffuseColor.blue,diffuseColor.green,diffuseColor.red);
+
+	}
+
 	//delete [] gridXvalues;
 	//delete [] gridYvalues;
 	//delete [] inSphere;
@@ -305,8 +315,8 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 		}
 
 		//calculate the new color
-		specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
-		diffuseColor = diffuseColor + shadowFactor*(attenuation*diffuseFactor)*emission;
+		//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
+		//diffuseColor = diffuseColor + shadowFactor*(attenuation*diffuseFactor)*emission;
     }
 
 	colorWithLighting = color + diffuseColor*diffuse + specularColor*specular;
