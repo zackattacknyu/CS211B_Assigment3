@@ -110,6 +110,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	float dotProdPosZ,dotProdNegZ,dotProdXYpart;
 	Vec3 positiveZvector;
 	Vec3 negativeZvector;
+	int numLightsHit = 0;
 
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
@@ -168,61 +169,51 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 					positiveZvector = Vec3(currentXvalue,currentYvalue,currentPosZvalue);
 
-					/*for( unsigned i = 0; i < scene.NumLights(); i++ )
-					{
-						const Object *light = scene.GetLight(i);
-						Color emission = light->material->emission;
-						AABB box = GetBox( *light );
-						Vec3 LightPos( Center( box ) ); 
+					//light ray to case to determine occulsion
+					ray.origin = P;
+					ray.direction = positiveZvector;
+					HitInfo objectHit;
+					objectHit.distance = Infinity;
 
-						//gets the light Vector
-						lightVector = LightPos - P;
-						lightDistance = Length(lightVector);
-						lightVector = Unit(lightVector);
+					shadowFactor = 1;
+					numLightsHit = 0;
+					if(scene.Cast(ray,objectHit) ){
+						if(objectHit.object != NULL){
+							Vec3 LightPos = objectHit.point;
+							if(LightPos.z > 12.0){
+								numLightsHit = numLightsHit + 1;
+								//the object hit is one of the lights
+								Color emission = objectHit.object->material->emission;
 
-						printf("Light %d has vector:(%f,%f,%f)\n",i,lightVector.x,lightVector.y,lightVector.z);
+								//gets the light Vector
+								lightVector = LightPos - P;
+								lightDistance = Length(lightVector);
 
-						//sees if current direction moves toward light vector
-						if(Length(lightVector-positiveZvector) < 0.05){
-							//gets the attenuation factor
-							attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
+								//gets the attenuation factor
+								attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
+								//gets the diffuse component
+								diffuseFactor = max(0,lightVector*N);
+		
+								//gets the specular component
+								currentR = Unit(2.0*(N*lightVector)*N - lightVector);
+								specularFactor = max(0, pow(currentR*E,e) );
 
-							//light ray to case to determine occulsion
-							ray.origin = P;
-							ray.direction = lightVector;
-							HitInfo objectHit;
-							objectHit.distance = Infinity;
-							Vec3 deltaVector;
-							Vec3 currentLightVector;
-							currentLightVector = lightVector + deltaVector;
-
-							shadowFactor = 1;
-							if(scene.Cast(ray,objectHit) ){
-								if(objectHit.object != NULL){
-									shadowFactor = 0;
+								if(diffuseFactor == 0){
+									specularFactor = 0;
 								}
+
+								//calculate the new color
+								//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
+								//diffuseColor = diffuseColor + (attenuation*diffuseFactor)*emission;
 							}
-
-							//gets the diffuse component
-							diffuseFactor = max(0,lightVector*N);
-		
-							//gets the specular component
-							currentR = Unit(2.0*(N*lightVector)*N - lightVector);
-							specularFactor = max(0, pow(currentR*E,e) );
-
-							if(diffuseFactor == 0){
-								specularFactor = 0;
-							}
-
-							//calculate the new color
-							//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
-							diffuseColor = diffuseColor + shadowFactor*(attenuation*diffuseFactor)*emission;
 						}
+					}
+
+					if(numLightsHit > 0){
+						//printf("Number of Lights Hit:%d\n",numLightsHit);		
+					}
+					
 		
-						
-		
-						
-					}*/
 					//printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd1],gridYvalues[currentInd1],gridZvalues[currentInd1]);
 				}
 

@@ -9,8 +9,8 @@ P = (
 
 %}
 clear all;
-numGridVals = 50;
-numIterations = 10;
+numGridVals = 30;
+numIterations = 5;
 
 interval = 2/numGridVals;
 intervalValues = -1:interval:1;
@@ -23,12 +23,16 @@ numValues = sizeIntVals(2);
 
 %the normal used to get the hemisphere we want
 normal = [1/sqrt(2),1/sqrt(2),0];
+origin = [0,0,0];
+normalLine = [normal;origin];
 %normal = [0,0,1];
 
 aVal = normal(1);
 bVal = normal(2);
 cVal = normal(3);
 
+hold on
+plot3(normalLine(:,1),normalLine(:,2),normalLine(:,3),'LineWidth',5);
 for iteration = 1:numIterations
     
     randomIntervalValues = rand(1,numValues).*interval;
@@ -43,9 +47,9 @@ for iteration = 1:numIterations
     YvalsPlot = Yvals(squaredDist <= radius^2);
     ZvalsPlot = sqrt(1 - XvalsPlot.^2 - YvalsPlot.^2);
     
-    XvalsPlot = [XvalsPlot XvalsPlot];
-    YvalsPlot = [YvalsPlot YvalsPlot];
-    ZvalsPlot = [ZvalsPlot -ZvalsPlot];
+    XvalsPlot = [XvalsPlot;XvalsPlot];
+    YvalsPlot = [YvalsPlot;YvalsPlot];
+    ZvalsPlot = [ZvalsPlot;-ZvalsPlot];
     
     %{
     To rotate the points, all points on the unit sphere are specified, 
@@ -58,10 +62,14 @@ for iteration = 1:numIterations
     YvalsToPlot = YvalsPlot(dotProds >= 0);
     ZvalsToPlot = ZvalsPlot(dotProds >= 0);
     
+    XvalsOtherPlot = XvalsPlot(dotProds < 0);
+    YvalsOtherPlot = YvalsPlot(dotProds < 0);
+    ZvalsOtherPlot = ZvalsPlot(dotProds < 0);
 
-    hold on
     plot3(XvalsToPlot,YvalsToPlot,ZvalsToPlot,'r.');
-    hold off
+    plot3(XvalsOtherPlot,YvalsOtherPlot,ZvalsOtherPlot,'g.');
     
 end
+
+hold off
 
