@@ -25,7 +25,12 @@ struct basic_shader : public Shader {
     virtual string MyName() const { return "basic_shader"; }
     virtual bool Default() const { return true; }
 	virtual Vec3 RefractionDirection(double n_1, double n_2, Vec3 incomingVector,Vec3 normalVector) const;
+	virtual Color basic_shader::GetDiffuseColor(Vec3 lightVector,Vec3 normal,Color emission, Color diffuse) const;
     };
+
+static const double attenuation_a = 0.0;
+static const double attenuation_b = 0.0;
+static const double attenuation_c = 0.02;
 
 REGISTER_PLUGIN( basic_shader );
 
@@ -70,10 +75,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
     if( E * N < 0.0 ) N = -N;  // Flip the normal if necessary.
 
 	//get the attentuation
-	//	A = 1/(a + b*r + c*r^2)
-	double attenuation_a = 0.0;
-	double attenuation_b = 0.0;
-	double attenuation_c = 0.02;
+	
 	double attenuation;
 	double lightDistance;
 	Vec3 lightVector;
@@ -106,7 +108,8 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	int currentInd1,currentInd2;
 	float randomX,randomY;
 	float currentPosZvalue,currentNegZvalue;
-	Vec3 currentNormal = Vec3(0.0f,0.0f,1.0f);
+	//Vec3 currentNormal = Vec3(0.0f,0.0f,1.0f);
+	Vec3 currentNormal = N;
 	float dotProdPosZ,dotProdNegZ,dotProdXYpart;
 	Vec3 positiveZvector;
 	Vec3 negativeZvector;
@@ -187,10 +190,9 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 							Vec3 LightPos = objectHit.point;
 							
 							if(LightPos.z > 12.0){
-
+								lightVector = LightPos - P;
+								numLightsHit = numLightsHit + 1;
 								/*
-								TODO: Modularize this lighting code
-								*/
 								//printf("Hit Point: (%f,%f,%f)\n",LightPos.x,LightPos.y,LightPos.z);
 
 								numLightsHit = numLightsHit + 1;
@@ -214,7 +216,8 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 								//calculate the new color
 								//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
-								diffuseColor = diffuseColor + (attenuation*diffuseFactor)*defaultEmission;
+								diffuseColor = diffuseColor + (attenuation*diffuseFactor)*defaultEmission;*/
+								diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 							}
 						}
 					}
@@ -228,6 +231,25 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 				if(negZinHemisphere){
 					negativeZvector = Vec3(currentXvalue,currentYvalue,currentNegZvalue);
 					//printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd2],gridYvalues[currentInd2],gridZvalues[currentInd2]);
+
+					//light ray to case to determine occulsion
+					ray.origin = P;
+					ray.direction = negativeZvector;
+					HitInfo objectHit;
+					objectHit.distance = Infinity;
+
+					shadowFactor = 1;
+					if(scene.Cast(ray,objectHit) ){
+						if(objectHit.object != NULL){
+							Vec3 LightPos = objectHit.point;
+							
+							if(LightPos.z > 12.0){
+								lightVector = LightPos - P;
+								numLightsHit = numLightsHit + 1;
+								diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+							}
+						}
+					}
 				}
 			}
 			
@@ -235,6 +257,52 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 		}
 	}
 	
+	//makes sure to include the light vectors in the calculations
+	for( unsigned i = 0; i < scene.NumLights(); i++ )
+        {
+        const Object *light = scene.GetLight(i);
+        Color emission = light->material->emission;
+        AABB box = GetBox( *light );
+        Vec3 LightPos( Center( box ) ); 
+
+		//gets the light Vector
+		lightVector = LightPos - P;
+		lightDistance = Length(lightVector);
+		Vec3 unitLightVector = Unit(lightVector);
+		
+		//gets the attenuation factor
+		attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
+
+		float dotProd = currentNormal.x*unitLightVector.x + currentNormal.y*unitLightVector.y + currentNormal.z*unitLightVector.z;
+
+		//light vector in unit hemipshere
+		if(dotProd >= 0){
+
+			//light ray to case to determine occulsion
+			ray.origin = P;
+			ray.direction = unitLightVector;
+			HitInfo objectHit;
+			objectHit.distance = Infinity;
+
+			if(scene.Cast(ray,objectHit) ){
+				if(objectHit.object != NULL){
+					Vec3 LightPos = objectHit.point;
+							
+					if(LightPos.z > 12.0){
+						numLightsHit = numLightsHit + 1;
+						lightVector = LightPos - P;
+						diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+					}
+				}
+			}
+
+		}
+
+		
+
+		
+    }
+
 	float numLights = numLightsHit;
 	diffuseColor = diffuseColor/(numLights*2*Pi);
 	if(numLightsHit > 1){
@@ -430,11 +498,31 @@ Vec3 basic_shader::RefractionDirection(double n_1, double n_2, Vec3 incomingVect
 	return Unit(Refrac);
 }
 
-/*
-TODO: Put method here to calculate lighting given the following:
-	lightVector
-	lightDistance
-	normal
-	emission
-	diffuse
-*/
+Color basic_shader::GetDiffuseColor(Vec3 lightVector,Vec3 normal,Color emission, Color diffuse) const{
+
+	
+	//printf("Hit Point: (%f,%f,%f)\n",LightPos.x,LightPos.y,LightPos.z);
+
+	//gets the light Vector
+	float lightDistance = Length(lightVector);
+
+	lightVector = Unit(lightVector);
+
+	//gets the attenuation factor
+	double attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
+	//gets the diffuse component
+	float diffuseFactor = max(0,lightVector*normal);
+		
+	//gets the specular component
+	//currentR = Unit(2.0*(N*lightVector)*N - lightVector);
+	//specularFactor = max(0, pow(currentR*E,e) );
+
+	if(diffuseFactor == 0){
+		//specularFactor = 0;
+	}
+
+	//calculate the new color
+	//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
+	return (attenuation*diffuseFactor)*emission;
+
+}
