@@ -115,6 +115,9 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	//temp variable. default emission of the light blocks
 	Color defaultEmission = Color(0.5,0.5,0.5);
 
+	/*TODO: Make sure to figure out how to include the lightVectors in the sampling
+		of the unit sphere. 
+	*/
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
 			for(int sampleInd = 0; sampleInd < numSamples; sampleInd++){
@@ -184,6 +187,10 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 							Vec3 LightPos = objectHit.point;
 							
 							if(LightPos.z > 12.0){
+
+								/*
+								TODO: Modularize this lighting code
+								*/
 								//printf("Hit Point: (%f,%f,%f)\n",LightPos.x,LightPos.y,LightPos.z);
 
 								numLightsHit = numLightsHit + 1;
@@ -422,3 +429,12 @@ Vec3 basic_shader::RefractionDirection(double n_1, double n_2, Vec3 incomingVect
 	Vec3 Refrac = Refrac_vertical + Refrac_horizontal;
 	return Unit(Refrac);
 }
+
+/*
+TODO: Put method here to calculate lighting given the following:
+	lightVector
+	lightDistance
+	normal
+	emission
+	diffuse
+*/
