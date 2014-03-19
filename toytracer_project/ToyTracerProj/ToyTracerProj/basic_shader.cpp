@@ -304,7 +304,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
     }
 
 	float numLights = numLightsHit;
-	diffuseColor = diffuseColor/(numLights*2*Pi);
+	diffuseColor = diffuseColor/(numLights*Pi);
 	if(numLightsHit > 1){
 		//printf("Number of Lights Hit:%d\n",numLightsHit);
 		//printf("Original Color: (%f,%f,%f)\n",diffuse.blue,diffuse.green,diffuse.red);
