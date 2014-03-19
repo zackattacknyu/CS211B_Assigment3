@@ -114,15 +114,36 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	Vec3 positiveZvector;
 	Vec3 negativeZvector;
 	int numLightsHit = 0;
+	
+	//used to calculate surface area
+	float centerXvalue,centerYvalue,centerZvalue,approxSurfaceArea;
 
 	//temp variable. default emission of the light blocks
 	Color defaultEmission = Color(0.5,0.5,0.5);
+
+	Color posZpatchValue = Color();
+	Color negZpatchValue = Color();
 
 	/*TODO: Make sure to figure out how to include the lightVectors in the sampling
 		of the unit sphere. 
 	*/
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
+
+			centerXvalue = -1 + interval*xInd + interval*0.5;
+			centerYvalue = -1 + interval*yInd + interval*0.5;
+			currentDist = centerXvalue*centerXvalue + centerYvalue*centerYvalue;
+			centerZvalue = sqrt(1-currentDist);
+
+			/*
+			Surface Area of sphere from each patch P is approximately area(P)*(1/z') where z' is taken at the center
+			This comes from the fact that the surface area is integral_P (1/z)
+			*/
+			approxSurfaceArea = interval*interval*(1/centerZvalue);
+
+			posZpatchValue = Color();
+			negZpatchValue = Color();
+
 			for(int sampleInd = 0; sampleInd < numSamples; sampleInd++){
 
 				randomX = (double)rand() / RAND_MAX;
@@ -217,7 +238,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 								//calculate the new color
 								//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
 								diffuseColor = diffuseColor + (attenuation*diffuseFactor)*defaultEmission;*/
-								diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+								posZpatchValue = posZpatchValue + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 							}
 						}
 					}
@@ -246,12 +267,16 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 							if(LightPos.z > 12.0){
 								lightVector = LightPos - P;
 								numLightsHit = numLightsHit + 1;
-								diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+								negZpatchValue = negZpatchValue + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 							}
 						}
 					}
 				}
+
 			}
+
+			diffuseColor = diffuseColor + (posZpatchValue/numSamples)*approxSurfaceArea;
+			diffuseColor = diffuseColor + (negZpatchValue/numSamples)*approxSurfaceArea;
 			
 			
 		}
@@ -304,7 +329,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
     }
 
 	float numLights = numLightsHit;
-	diffuseColor = diffuseColor/(numLights*Pi);
+	//diffuseColor = diffuseColor/(numLights*Pi);
 	if(numLightsHit > 1){
 		//printf("Number of Lights Hit:%d\n",numLightsHit);
 		//printf("Original Color: (%f,%f,%f)\n",diffuse.blue,diffuse.green,diffuse.red);
