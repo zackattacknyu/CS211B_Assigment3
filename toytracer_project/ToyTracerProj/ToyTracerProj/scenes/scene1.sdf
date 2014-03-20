@@ -17,8 +17,8 @@ y_win   ( -1, 1 )
 
 # Set the image resolution.
 
-x_res 500
-y_res 400
+x_res 250
+y_res 200
 
 # Set constants that will apply to all objects, until reset.
 

@@ -92,13 +92,9 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	bool objectWasHit = false;
 
 	int numGridVals = 30;
-	int numSamples = 10;
+	float numSamples = 5;
 	int totalNumGridVals = numGridVals*numGridVals*numSamples;
 	int totalArrayValues = totalNumGridVals*2;
-	//float* gridXvalues = new float[totalArrayValues];
-	//float* gridYvalues = new float[totalArrayValues];
-	//float* gridZvalues = new float[totalArrayValues];
-	//bool* inSphere = new bool[totalArrayValues];
 	float totalGridVals = numGridVals;
 	float currentXvalue;
 	float currentYvalue;
@@ -115,18 +111,27 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 	Vec3 negativeZvector;
 	int numLightsHit = 0;
 	
+	/*
+	Surface Area of sphere from each patch P is approximately area(P)*(1/z') where z' is taken at the center
+	This comes from the fact that the surface area is integral_P (1/z)
+	*/
+	float minZvalue=sqrt(interval)*sqrt(2-interval);;
+	
 	//used to calculate surface area
 	float centerXvalue,centerYvalue,centerZvalue,approxSurfaceArea;
 
 	//temp variable. default emission of the light blocks
-	Color defaultEmission = Color(0.5,0.5,0.5);
+	Color defaultEmission = Color(1.0,1.0,1.0);
+	double emissionFactor = 30.0;
 
 	Color posZpatchValue = Color();
 	Color negZpatchValue = Color();
+	Color posZpatchSpecValue = Color();
+	Color negZpatchSpecValue = Color();
+	double radius,patchFormFactor;
+	Vec3 otherNormal;
+	float currentEnergy = 0;
 
-	/*TODO: Make sure to figure out how to include the lightVectors in the sampling
-		of the unit sphere. 
-	*/
 	for(int xInd = 0; xInd < numGridVals; xInd++){
 		for(int yInd = 0; yInd < numGridVals; yInd++){
 
@@ -135,11 +140,13 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 			currentDist = centerXvalue*centerXvalue + centerYvalue*centerYvalue;
 			centerZvalue = sqrt(1-currentDist);
 
-			/*
-			Surface Area of sphere from each patch P is approximately area(P)*(1/z') where z' is taken at the center
-			This comes from the fact that the surface area is integral_P (1/z)
-			*/
-			approxSurfaceArea = interval*interval*(1/centerZvalue);
+			
+			if(centerZvalue < minZvalue){
+				centerZvalue = minZvalue;
+			}
+
+			approxSurfaceArea = interval*interval*(1.0f/centerZvalue);	
+			
 
 			posZpatchValue = Color();
 			negZpatchValue = Color();
@@ -173,25 +180,6 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 					posZinHemisphere = (dotProdPosZ >=0);
 					negZinHemisphere = (dotProdNegZ >=0);
 
-					/*if(posZinHemisphere){
-						gridXvalues[currentInd1] = currentXvalue;
-						gridYvalues[currentInd1] = currentYvalue;
-						gridZvalues[currentInd1] = currentPosZvalue;
-					}
-
-					if(negZinHemisphere){
-						gridXvalues[currentInd2] = currentXvalue;
-						gridYvalues[currentInd2] = currentYvalue;
-						gridZvalues[currentInd2] = currentNegZvalue;
-					}*/
-
-				}else{
-					/*gridXvalues[currentInd1] = 0;
-					gridYvalues[currentInd1] = 0;
-					gridZvalues[currentInd1] = 0;
-					gridXvalues[currentInd2] = 0;
-					gridYvalues[currentInd2] = 0;
-					gridZvalues[currentInd2] = 0;*/
 				}
 
 
@@ -213,40 +201,20 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 							if(LightPos.z > 12.0){
 								lightVector = LightPos - P;
 								numLightsHit = numLightsHit + 1;
-								/*
-								//printf("Hit Point: (%f,%f,%f)\n",LightPos.x,LightPos.y,LightPos.z);
+								radius = Length(lightVector);
+								otherNormal = Unit(objectHit.normal);
+								lightVector = Unit(lightVector);
 
-								numLightsHit = numLightsHit + 1;
-
-								//gets the light Vector
-								lightVector = LightPos - P;
-								lightDistance = Length(lightVector);
-
-								//gets the attenuation factor
-								attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
-								//gets the diffuse component
-								diffuseFactor = max(0,lightVector*N);
-		
-								//gets the specular component
-								currentR = Unit(2.0*(N*lightVector)*N - lightVector);
-								specularFactor = max(0, pow(currentR*E,e) );
-
-								if(diffuseFactor == 0){
-									specularFactor = 0;
-								}
-
-								//calculate the new color
-								//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
-								diffuseColor = diffuseColor + (attenuation*diffuseFactor)*defaultEmission;*/
-								posZpatchValue = posZpatchValue + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+								//this is the current patches approximation of F_ij
+								//patchFormFactor = ((abs(lightVector*currentNormal))*(abs(-1*lightVector*otherNormal)))/(Pi*radius*radius);
+								patchFormFactor = ((lightVector*currentNormal)*(-1*lightVector*otherNormal))/(Pi*radius*radius);
+								//printf("radius: %f\n",radius);
+								currentEnergy = currentEnergy + emissionFactor*patchFormFactor;
+								//posZpatchValue = posZpatchValue + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 							}
 						}
 					}
 
-					
-					
-		
-					//printf("(x,y,z)=(%f,%f,%f)\n",gridXvalues[currentInd1],gridYvalues[currentInd1],gridZvalues[currentInd1]);
 				}
 
 				if(negZinHemisphere){
@@ -267,7 +235,17 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 							if(LightPos.z > 12.0){
 								lightVector = LightPos - P;
 								numLightsHit = numLightsHit + 1;
-								negZpatchValue = negZpatchValue + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+								radius = Length(lightVector);
+								
+								otherNormal = Unit(objectHit.normal);
+								lightVector = Unit(lightVector);
+
+								//this is the current patches approximation of F_ij
+								//patchFormFactor = ((abs(lightVector*currentNormal))*(abs(-1*lightVector*otherNormal)))/(Pi*radius*radius);
+								patchFormFactor = ((lightVector*currentNormal)*(-1*lightVector*otherNormal))/(Pi*radius*radius);
+								currentEnergy = currentEnergy + emissionFactor*patchFormFactor;
+								
+								//negZpatchValue = negZpatchValue + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 							}
 						}
 					}
@@ -275,8 +253,16 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 			}
 
-			diffuseColor = diffuseColor + (posZpatchValue/numSamples)*approxSurfaceArea;
-			diffuseColor = diffuseColor + (negZpatchValue/numSamples)*approxSurfaceArea;
+			//diffuseColor = diffuseColor + (posZpatchValue/numSamples)*approxSurfaceArea;
+			//diffuseColor = diffuseColor + (negZpatchValue/numSamples)*approxSurfaceArea;
+			//printf("Approx Surface Area:%f\n",approxSurfaceArea);
+
+			//diffuseColor = diffuseColor + posZpatchValue;
+			//diffuseColor = diffuseColor + negZpatchValue;
+
+			if(diffuseColor.blue > 0.5 || diffuseColor.green > 0.5 || diffuseColor.red > 0.5){
+				//printf("Current Diffuse Color: (%f,%f,%f)\n",diffuseColor.blue,diffuseColor.green,diffuseColor.red);
+			}
 			
 			
 		}
@@ -316,7 +302,17 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 					if(LightPos.z > 12.0){
 						numLightsHit = numLightsHit + 1;
 						lightVector = LightPos - P;
-						diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+						//diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+
+						radius = Length(lightVector);
+								
+						otherNormal = Unit(objectHit.normal);
+						lightVector = Unit(lightVector);
+
+						//this is the current patches approximation of F_ij
+						//patchFormFactor = ((abs(lightVector*currentNormal))*(abs(-1*lightVector*otherNormal)))/(Pi*radius*radius);
+						patchFormFactor = ((lightVector*currentNormal)*(-1*lightVector*otherNormal))/(Pi*radius*radius);
+						currentEnergy = currentEnergy + emissionFactor*patchFormFactor;
 					}
 				}
 			}
@@ -327,6 +323,10 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 		
     }
+
+	diffuseColor = currentEnergy*defaultEmission;
+
+	
 
 	float numLights = numLightsHit;
 	//diffuseColor = diffuseColor/(numLights*Pi);
@@ -337,89 +337,9 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 	}
 
-	//delete [] gridXvalues;
-	//delete [] gridYvalues;
-	//delete [] inSphere;
-
-    for( unsigned i = 0; i < scene.NumLights(); i++ )
-        {
-        const Object *light = scene.GetLight(i);
-        Color emission = light->material->emission;
-        AABB box = GetBox( *light );
-        Vec3 LightPos( Center( box ) ); 
-
-		//gets the light Vector
-		lightVector = LightPos - P;
-		lightDistance = Length(lightVector);
-		lightVector = Unit(lightVector);
-		
-		//gets the attenuation factor
-		attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
-
-		//light ray to case to determine occulsion
-		ray.origin = P;
-		ray.direction = lightVector;
-		HitInfo objectHit;
-		//objectHit.ignore = NULL;
-		objectHit.distance = Infinity;
-
-		const int numRaysSoftShadows = 1;
-		double randomLightDeltaY;
-		double randomLightDeltaZ;
-		Vec3 deltaVector;
-		Vec3 currentLightVector;
-
-		//calculate the soft shadow
-		for(int rayIndex = 0; rayIndex < numRaysSoftShadows; rayIndex++){
-
-
-			if(numRaysSoftShadows > 1){
-				//generates two numbers between -0.05 and 0.05
-				randomLightDeltaY = ( ((double)rand() / RAND_MAX) - 0.5)/10.0;
-				randomLightDeltaZ = ( ((double)rand() / RAND_MAX) - 0.5)/10.0;
-				deltaVector = Vec3(0.0,randomLightDeltaY,randomLightDeltaZ);
-			}else{
-				deltaVector = Vec3(0.0,0.0,0.0);
-			}
-			
-			currentLightVector = lightVector + deltaVector;
-
-			ray.direction = currentLightVector;
-			//objectHit.ignore = NULL;
-			objectHit.distance = Infinity;
-
-			if(scene.Cast(ray,objectHit) ){
-				if(objectHit.object != NULL){
-					//12 and above are where the dummy blocks are
-					if(objectHit.point.z < 12.0){
-						shadowFactor = shadowFactor + 1;
-					}
-					
-				}
-			}
-		}
-
-		//calculate the shadow factor
-		shadowFactor = shadowFactor/numRaysSoftShadows;
-		shadowFactor = 1-shadowFactor;
-		
-		//gets the diffuse component
-		diffuseFactor = max(0,lightVector*N);
-		
-		//gets the specular component
-		currentR = Unit(2.0*(N*lightVector)*N - lightVector);
-		specularFactor = max(0, pow(currentR*E,e) );
-
-		if(diffuseFactor == 0){
-			specularFactor = 0;
-		}
-
-		//calculate the new color
-		//specularColor = specularColor + shadowFactor*(attenuation*specularFactor)*emission;
-		//diffuseColor = diffuseColor + shadowFactor*(attenuation*diffuseFactor)*emission;
-    }
-
-	colorWithLighting = color + diffuseColor*diffuse + specularColor*specular;
+	//colorWithLighting = color + diffuseColor*diffuse + specularColor*specular;
+	//colorWithLighting = diffuseColor*diffuse;
+	colorWithLighting = diffuseColor*diffuse + diffuse*0.4;
 
 	//set variables for reflection
 	reflectionRay.origin = P;
@@ -488,17 +408,13 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 		reflectedColor = scene.Trace(reflectionRay);
 	}
 	
-	//debug code
-	//printf("Eye Vector: (%f,%f,%f)\n",E.x,E.y,E.z);
-	//printf("Normal Vector: (%f,%f,%f)\n",N.x,N.y,N.z);
-	//printf("Refraction Vector: (%f,%f,%f)\n",refractionDir.x,refractionDir.y,refractionDir.z);
-	//printf("(N_1,N_2)=(%f,%f)\n\n",hit.ray.ref_index,refractedRay.ref_index);
-	
+	//printf("diffuseColor: (%f,%f,%f)\n",colorWithLighting.red,colorWithLighting.green,colorWithLighting.blue);
 
 	//now combine calculated color with reflected color
-	finalColor = (-1*t + Color(1.0,1.0,1.0))*(colorWithLighting + r*reflectedColor) + t*refractedColor;
+	//finalColor = (-1*t + Color(1.0,1.0,1.0))*(colorWithLighting + r*reflectedColor) + t*refractedColor;
 
-	return finalColor; 
+	return colorWithLighting;
+	//return finalColor; 
     }
 
 	/*calculate the refraction direction
@@ -534,7 +450,8 @@ Color basic_shader::GetDiffuseColor(Vec3 lightVector,Vec3 normal,Color emission,
 	lightVector = Unit(lightVector);
 
 	//gets the attenuation factor
-	double attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
+	//double attenuation = 1/(attenuation_a + attenuation_b*lightDistance + attenuation_c*lightDistance*lightDistance);
+	double attenuation = 1;
 	//gets the diffuse component
 	float diffuseFactor = max(0,lightVector*normal);
 		
