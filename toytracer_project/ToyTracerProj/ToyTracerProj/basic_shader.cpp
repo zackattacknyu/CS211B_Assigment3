@@ -208,9 +208,10 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 								//this is the current patches approximation of F_ij
 								//patchFormFactor = ((abs(lightVector*currentNormal))*(abs(-1*lightVector*otherNormal)))/(Pi*radius*radius);
 								patchFormFactor = ((lightVector*currentNormal)*(-1*lightVector*otherNormal))/(Pi*radius*radius);
+								patchFormFactor = max(0,patchFormFactor);
 								//printf("radius: %f\n",radius);
 								currentEnergy = currentEnergy + emissionFactor*patchFormFactor;
-								//posZpatchValue = posZpatchValue + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
+								diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 							}
 						}
 					}
@@ -243,8 +244,9 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 								//this is the current patches approximation of F_ij
 								//patchFormFactor = ((abs(lightVector*currentNormal))*(abs(-1*lightVector*otherNormal)))/(Pi*radius*radius);
 								patchFormFactor = ((lightVector*currentNormal)*(-1*lightVector*otherNormal))/(Pi*radius*radius);
+								patchFormFactor = max(0,patchFormFactor);
 								currentEnergy = currentEnergy + emissionFactor*patchFormFactor;
-								
+								diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 								//negZpatchValue = negZpatchValue + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 							}
 						}
@@ -312,7 +314,9 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 						//this is the current patches approximation of F_ij
 						//patchFormFactor = ((abs(lightVector*currentNormal))*(abs(-1*lightVector*otherNormal)))/(Pi*radius*radius);
 						patchFormFactor = ((lightVector*currentNormal)*(-1*lightVector*otherNormal))/(Pi*radius*radius);
+						patchFormFactor = max(0,patchFormFactor);
 						currentEnergy = currentEnergy + emissionFactor*patchFormFactor;
+						diffuseColor = diffuseColor + GetDiffuseColor(lightVector,N,defaultEmission,diffuse);
 					}
 				}
 			}
@@ -326,7 +330,7 @@ Color basic_shader::Shade( const Scene &scene, const HitInfo &hit ) const
 
 	diffuseColor = currentEnergy*defaultEmission;
 
-	
+	//diffuseColor = diffuseColor/12.0;
 
 	float numLights = numLightsHit;
 	//diffuseColor = diffuseColor/(numLights*Pi);
